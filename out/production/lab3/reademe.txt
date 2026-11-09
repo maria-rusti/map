@@ -1,0 +1,21 @@
+PROIECT REȚEA DE SOCIALIZARE - LABORATORUL 4 (JAVA 8)
+
+1. Tabel înainte / după pentru bucle înlocuite cu Stream API:
++---------------------+-----------------------+------------------------------------------+--------------------------------------------------+
+| Clasa               | Metoda                | Înainte (Lab 3 - Bucle clasice)          | După (Lab 4 - Stream API)                        |
++---------------------+-----------------------+------------------------------------------+--------------------------------------------------+
+| PrietenieService    | removePrieteniiForUser| for-each peste toate prieteniile         | stream().filter(...).map(...).toList().forEach() |
+| ComunitateService   | adezentaGraf          | for-each pentru popularea grafului       | stream().collect(Collectors.toMap(...))          |
+| ComunitateService   | getComunitati         | for / while pentru parcurgere BFS        | Stream API pentru filtrarea vecinilor vizitați   |
+| ComunitateService   | getCeaMaiSociabilă    | for clasic de maxim pe colecție          | stream().max(Comparator.comparingInt(...))       |
+| Repository          | findAll(Predicate)    | parcurgere iterativă clasică             | StreamSupport.stream(...).filter(...).collect()  |
++---------------------+-----------------------+------------------------------------------+--------------------------------------------------+
+
+2. Interfețe funcționale utilizate:
+- Validator<T>: Adnotată cu @FunctionalInterface, având metoda default andThen(Validator<T> other) pentru compunerea validărilor fără clase noi.
+- Predicate<E>: Folosit în interfața Repository pentru filtrarea entităților.
+- Function<V, R> / Supplier: Utilizate în RepositoryFactory pentru maparea tipurilor de repository fără instrucțiuni switch.
+
+3. Justificări arhitecturale:
+- Optional în Repository: S-a decis păstrarea contractului existent (findOne întoarce null dacă nu există) în timp ce în service-uri se folosește Optional.ofNullable pentru a gestiona valorile opționale în mod funcțional.
+- Repository-uri pe fișier: S-a utilizat citirea optimizată prin linii cu Files.lines() în blocuri try-with-resources pentru a asigura închiderea corectă a fluxului pe disc.
