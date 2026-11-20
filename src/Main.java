@@ -93,8 +93,8 @@ public class Main {
         UtilizatorService utilizatorService = new UtilizatorService(userRepo);
         PrietenieService prietenieService = new PrietenieService(prietenieRepo, userRepo, prietenieValidator);
         ComunitateService comunitateService = new ComunitateService(userRepo, prietenieRepo);
-
-        UI ui = new UI(utilizatorService, prietenieService, comunitateService);
+        int pageSize = Integer.parseInt(props.getProperty("page.size", "3").trim());
+        UI ui = new UI(utilizatorService, prietenieService, comunitateService, pageSize);
         ui.run();
     }
 }

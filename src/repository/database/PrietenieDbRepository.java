@@ -2,8 +2,11 @@ package repository.database;
 
 import domain.Prietenie;
 import domain.Tuple;
+import domain.Utilizator;
 import repository.Repository;
 import repository.RepositoryException;
+import util.paging.Page;
+import util.paging.Pageable;
 import validator.ValidationException;
 import validator.Validator;
 
@@ -96,6 +99,78 @@ public class PrietenieDbRepository implements Repository<Tuple<Long, Long>, Prie
             return friendships;
         } catch (SQLException e) {
             throw new RepositoryException("Error retrieving friendships: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Retrieves a single page of friends for the specified user using a single SQL
+     * {@code JOIN} query with database-level pagination.
+     *
+     * @param userId   identifier of the user whose friends are requested
+     * @param pageable pagination criteria containing page number and page size
+     * @return a {@link Page} of {@link Utilizator} representing friends on the requested page
+     * @throws IllegalArgumentException if {@code userId} or {@code pageable} is {@code null}
+     *                                  or if pagination values are invalid
+     * @throws RepositoryException      if a database access error occurs
+     */
+    public Page<Utilizator> findFriendsOnPage(Long userId, Pageable pageable) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User id must not be null.");
+        }
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable must not be null.");
+        }
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+        if (pageNumber < 0 || pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters: pageNumber must be >= 0 and pageSize must be > 0.");
+        }
+
+        String countSql = "SELECT COUNT(*) AS total FROM friendships WHERE id1 = ? OR id2 = ?";
+        String pageSql =
+                "SELECT u.id, u.first_name, u.last_name " +
+                        "FROM friendships f " +
+                        "JOIN users u ON u.id = CASE WHEN f.id1 = ? THEN f.id2 ELSE f.id1 END " +
+                        "WHERE f.id1 = ? OR f.id2 = ? " +
+                        "ORDER BY u.id " +
+                        "LIMIT ? OFFSET ?";
+
+        int offset = pageNumber * pageSize;
+
+        try (Connection conn = DriverManager.getConnection(url, username, password)) {
+            int totalNumberOfElements = 0;
+            try (PreparedStatement countStmt = conn.prepareStatement(countSql)) {
+                countStmt.setLong(1, userId);
+                countStmt.setLong(2, userId);
+                try (ResultSet countRs = countStmt.executeQuery()) {
+                    if (countRs.next()) {
+                        totalNumberOfElements = countRs.getInt("total");
+                    }
+                }
+            }
+
+            List<Utilizator> friendsOnPage = new ArrayList<>();
+            try (PreparedStatement pageStmt = conn.prepareStatement(pageSql)) {
+                pageStmt.setLong(1, userId);
+                pageStmt.setLong(2, userId);
+                pageStmt.setLong(3, userId);
+                pageStmt.setInt(4, pageSize);
+                pageStmt.setInt(5, offset);
+                try (ResultSet rs = pageStmt.executeQuery()) {
+                    while (rs.next()) {
+                        long friendId = rs.getLong("id");
+                        String firstName = rs.getString("first_name");
+                        String lastName = rs.getString("last_name");
+                        Utilizator friend = new Utilizator(firstName, lastName);
+                        friend.setId(friendId);
+                        friendsOnPage.add(friend);
+                    }
+                }
+            }
+
+            return new Page<>(friendsOnPage, totalNumberOfElements);
+        } catch (SQLException e) {
+            throw new RepositoryException("Error retrieving friends on page: " + e.getMessage(), e);
         }
     }
 

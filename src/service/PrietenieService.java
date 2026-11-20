@@ -4,6 +4,9 @@ import domain.Prietenie;
 import domain.Tuple;
 import domain.Utilizator;
 import repository.Repository;
+import repository.database.PrietenieDbRepository;
+import util.paging.Page;
+import util.paging.Pageable;
 import validator.Validator;
 
 import java.time.LocalDateTime;
@@ -11,7 +14,8 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 /**
- * Service for managing friendships using Stream API and Optional (Lab 4).
+ * Service for managing friendships using Stream API and Optional (Lab 4),
+ * with paginated friend retrieval for database repositories.
  */
 public class PrietenieService {
     private final Repository<Tuple<Long, Long>, Prietenie> repoPrietenie;
@@ -86,5 +90,29 @@ public class PrietenieService {
      */
     public Iterable<Prietenie> getAllPrietenii() {
         return repoPrietenie.findAll();
+    }
+
+    /**
+     * Retrieves a single page of friends for a given user using the database repository.
+     *
+     * @param userId   identifier of the user whose friends are requested
+     * @param pageable pagination criteria containing page number and page size
+     * @return a {@link Page} of {@link Utilizator} representing friends on the requested page
+     * @throws IllegalArgumentException if {@code userId} or {@code pageable} is {@code null},
+     *                                  pagination parameters are invalid ({@code pageNumber < 0} or {@code pageSize <= 0}),
+     *                                  or the repository is not a database repository
+     */
+    public Page<Utilizator> getFriendsOnPage(Long userId, Pageable pageable) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User id must not be null.");
+        }
+        if (pageable == null || pageable.getPageNumber() < 0 || pageable.getPageSize() <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters: pageNumber must be >= 0 and pageSize must be > 0.");
+        }
+        if (!(repoPrietenie instanceof PrietenieDbRepository)) {
+            throw new IllegalArgumentException("Friend pagination is only supported for DATABASE repositories.");
+        }
+        PrietenieDbRepository dbRepo = (PrietenieDbRepository) repoPrietenie;
+        return dbRepo.findFriendsOnPage(userId, pageable);
     }
 }

@@ -1,8 +1,10 @@
 package repository.database;
 
 import domain.Utilizator;
-import repository.Repository;
 import repository.RepositoryException;
+import util.paging.Page;
+import util.paging.Pageable;
+import util.paging.PagingRepository;
 import validator.ValidationException;
 import validator.Validator;
 
@@ -16,9 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JDBC repository implementation for {@link Utilizator} backed by PostgreSQL.
+ * JDBC repository implementation for {@link Utilizator} backed by PostgreSQL,
+ * supporting pagination.
  */
-public class UtilizatorDbRepository implements Repository<Long, Utilizator> {
+public class UtilizatorDbRepository implements PagingRepository<Long, Utilizator> {
     private final String url;
     private final String username;
     private final String password;
@@ -86,6 +89,56 @@ public class UtilizatorDbRepository implements Repository<Long, Utilizator> {
             return users;
         } catch (SQLException e) {
             throw new RepositoryException("Error retrieving users: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Retrieves a single page of users from the database using SQL pagination.
+     * Executes both the total count query and the paginated query on the same connection.
+     *
+     * @param pageable pagination request containing page number and page size
+     * @return a {@link Page} containing users on the requested page and total user count
+     * @throws IllegalArgumentException if {@code pageable} is {@code null} or has invalid parameters
+     * @throws RepositoryException      if a database access error occurs
+     */
+    @Override
+    public Page<Utilizator> findAllOnPage(Pageable pageable) {
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable must not be null.");
+        }
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+        if (pageNumber < 0 || pageSize <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters.");
+        }
+
+        String countSql = "SELECT COUNT(*) AS total FROM users";
+        String pageSql = "SELECT id, first_name, last_name FROM users ORDER BY id LIMIT ? OFFSET ?";
+        int offset = pageNumber * pageSize;
+
+        try (Connection conn = DriverManager.getConnection(url, username, password)) {
+            int totalNumberOfElements = 0;
+            try (PreparedStatement countStmt = conn.prepareStatement(countSql);
+                 ResultSet countRs = countStmt.executeQuery()) {
+                if (countRs.next()) {
+                    totalNumberOfElements = countRs.getInt("total");
+                }
+            }
+
+            List<Utilizator> usersOnPage = new ArrayList<>();
+            try (PreparedStatement pageStmt = conn.prepareStatement(pageSql)) {
+                pageStmt.setInt(1, pageSize);
+                pageStmt.setInt(2, offset);
+                try (ResultSet rs = pageStmt.executeQuery()) {
+                    while (rs.next()) {
+                        usersOnPage.add(mapRow(rs));
+                    }
+                }
+            }
+
+            return new Page<>(usersOnPage, totalNumberOfElements);
+        } catch (SQLException e) {
+            throw new RepositoryException("Error retrieving users on page: " + e.getMessage(), e);
         }
     }
 
