@@ -58,4 +58,30 @@ public class RepositoryFactory {
         }
         return creator.apply(validator);
     }
+
+    public Repository<Long, Utilizator> createUserRepository(
+            RepositoryType type,
+            Validator<Utilizator> validator,
+            String url,
+            String username,
+            String password
+    ) {
+        if (type == RepositoryType.DATABASE) {
+            return new UtilizatorDbRepository(url, username, password, validator);
+        }
+        throw new IllegalArgumentException("Unsupported repository type for database creation: " + type);
+    }
+
+    public Repository<Tuple<Long, Long>, Prietenie> createPrietenieRepository(
+            RepositoryType type,
+            Validator<Prietenie> validator,
+            String url,
+            String username,
+            String password
+    ) {
+        if (type == RepositoryType.DATABASE) {
+            return new PrietenieDbRepository(url, username, password, validator);
+        }
+        throw new IllegalArgumentException("Unsupported repository type for database creation: " + type);
+    }
 }

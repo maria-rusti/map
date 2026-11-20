@@ -2,5 +2,4 @@
 2;dsfsdf;sdfds
 3;dfgd;gdf
 4;ceva;ceva4
-5;gdfgdf;dfgdf
 7;regtr;rtr

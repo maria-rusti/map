@@ -29,7 +29,7 @@ public class UI {
             printMenu();
             String optiune = scanner.nextLine().trim();
             try {
-                // Switch în formă clasică (fără operatori lambda/arrow conform cerințelor)[cite: 3]
+                // Switch în formă clasică (fără operatori lambda/arrow conform cerințelor)
                 switch (optiune) {
                     case "1":
                         adaugaUtilizator();
@@ -64,8 +64,6 @@ public class UI {
                 }
             } catch (ValidationException | RepositoryException | IllegalArgumentException e) {
                 System.out.println("Eroare: " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("A apărut o eroare neașteptată: " + e.getMessage());
             }
             System.out.println();
         }
@@ -86,44 +84,60 @@ public class UI {
     }
 
     private void adaugaUtilizator() {
-        System.out.print("ID: ");
-        Long id = Long.parseLong(scanner.nextLine().trim());
-        System.out.print("Prenume: ");
-        String prenume = scanner.nextLine().trim();
-        System.out.print("Nume: ");
-        String nume = scanner.nextLine().trim();
+        try {
+            System.out.print("ID: ");
+            Long id = Long.parseLong(scanner.nextLine().trim());
+            System.out.print("Prenume: ");
+            String prenume = scanner.nextLine().trim();
+            System.out.print("Nume: ");
+            String nume = scanner.nextLine().trim();
 
-        utilizatorService.addUtilizator(prenume, nume, id);
-        System.out.println("Utilizator adăugat cu succes!");
+            utilizatorService.addUtilizator(prenume, nume, id);
+            System.out.println("Utilizator adăugat cu succes!");
+        } catch (NumberFormatException e) {
+            System.out.println("Eroare: ID-ul trebuie să fie un număr întreg valid.");
+        }
     }
 
     private void stergeUtilizator() {
-        System.out.print("ID-ul utilizatorului de șters: ");
-        Long id = Long.parseLong(scanner.nextLine().trim());
-        // Ștergem prieteniile asociate pentru a menține consistența fișierelor[cite: 1]
-        prietenieService.removePrieteniiForUser(id);
-        utilizatorService.removeUtilizator(id);
-        System.out.println("Utilizator și prieteniile asociate au fost șterse cu succes!");
+        try {
+            System.out.print("ID-ul utilizatorului de șters: ");
+            Long id = Long.parseLong(scanner.nextLine().trim());
+            // Ștergem prieteniile asociate pentru a menține consistența
+            prietenieService.removePrieteniiForUser(id);
+            utilizatorService.removeUtilizator(id);
+            System.out.println("Utilizator și prieteniile asociate au fost șterse cu succes!");
+        } catch (NumberFormatException e) {
+            System.out.println("Eroare: ID-ul trebuie să fie un număr întreg valid.");
+        }
     }
 
     private void adaugaPrietenie() {
-        System.out.print("ID Utilizator 1: ");
-        Long id1 = Long.parseLong(scanner.nextLine().trim());
-        System.out.print("ID Utilizator 2: ");
-        Long id2 = Long.parseLong(scanner.nextLine().trim());
+        try {
+            System.out.print("ID Utilizator 1: ");
+            Long id1 = Long.parseLong(scanner.nextLine().trim());
+            System.out.print("ID Utilizator 2: ");
+            Long id2 = Long.parseLong(scanner.nextLine().trim());
 
-        prietenieService.addPrietenie(id1, id2);
-        System.out.println("Prietenie adăugată cu succes!");
+            prietenieService.addPrietenie(id1, id2);
+            System.out.println("Prietenie adăugată cu succes!");
+        } catch (NumberFormatException e) {
+            System.out.println("Eroare: ID-urile trebuie să fie numere întregi valide.");
+        }
     }
 
     private void stergePrietenie() {
-        System.out.print("ID Utilizator 1: ");
-        Long id1 = Long.parseLong(scanner.nextLine().trim());
-        System.out.print("ID Utilizator 2: ");
-        Long id2 = Long.parseLong(scanner.nextLine().trim());
+        try {
+            System.out.print("ID Utilizator 1: ");
+            Long id1 = Long.parseLong(scanner.nextLine().trim());
+            System.out.print("ID Utilizator 2: ");
+            Long id2 = Long.parseLong(scanner.nextLine().trim());
 
-        prietenieService.removePrietenie(id1, id2);
-        System.out.println("Prietenie ștearsă cu succes!");
+            prietenieService.removePrietenie(id1, id2);
+            System.out.println("Prietenie ștearsă cu succes!");
+        } catch (NumberFormatException e) {
+            System.out.println("Eroare: ID-urile trebuie să fie numere întregi valide.");
+        }
     }
 
     private void afiseazaUtilizatori() {
